@@ -5,7 +5,7 @@ from sqlalchemy.orm import sessionmaker, declarative_base, relationship
 
 Base = declarative_base()
 
-DSN = 'postgresql://postgres:padzzzer18flot18vk@localhost:5432/ormm'
+DSN = 'postgresql://postgres:padzzzer18flot18vk@localhost:5432/orm'
 engine = sq.create_engine(DSN)
 
 Session = sessionmaker(bind=engine)
@@ -85,10 +85,14 @@ def loading_data():
         session.add(model(id=record.get('pk'), **record.get('fields')))
     session.commit()
 
+rq = session.query(Book.title, Shop.name, Sale.price, Sale.date_sale,).select_from(Shop).join(Stock).join(Book).join(Publisher).join(Sale)
 def search_publisher(request_publisher):
-    result = session.query(Book, Shop, Sale).filter(Publisher.name == request_publisher).filter(Publisher.id == Book.id_publisher).filter(Book.id_publisher == Stock.id_book).filter(Stock.id_shop == Shop.id).filter(Stock.id == Sale.id_stock).all()
-    for i in result:
-        print(f'{i[0]} | {i[1]} | {i[2]}')
+    if request_publisher.isdigit():
+        rp = rq.filter(Publisher.id == request_publisher).all() #Обращаемся к запросу, который составили ранее, и применяем фильтрацию, где айди публициста равно переданным данным в функцию, и сохраняем в переменную
+    else:
+        rp = rq.filter(Publisher.name == request_publisher).all() #Обращаемся к запросу, который составили ранее, и применяем фильтрацию, где имя публициста равно переданным данным в функцию, и сохраняем в переменную
+    for Book, Shop, Sale, Date_Sale in rp: #Проходим в цикле по переменой, в которой сохраняем результат фильтрации, и при каждой итерации получаем кортеж и распаковываем значения в 4 переменные
+        print(f"{Book: <40} | {Shop: <10} | {Sale: <8} | {Date_Sale.strftime('%d-%m-%Y')}") #Передаем в форматированную строку переменные, которые содержат имя книги, название магазина, стоимость продажи и дату продажи
 
 # create_tables(engine)
 # loading_data()
